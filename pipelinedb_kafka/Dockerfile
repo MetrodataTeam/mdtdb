@@ -2,10 +2,9 @@ FROM metrodatatech/mdtdb:11
 
 ENV DEBIAN_FRONTEND noninteractive
 
+COPY src/sources.list /etc/apt/sources.list
 COPY src/librdkafka-0.11.6.tar.gz src/pipeline_kafka.tar.gz /tmp/
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
-    && sed -i 's|security.debian.org/debian-security|mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list \
-    && apt-get -y update \
+RUN apt-get -y update \
     && apt-get install -y --no-install-recommends tar curl make gcc g++ libssl-dev zlib1g-dev postgresql-server-dev-11 \
     && curl -s http://download.pipelinedb.com/apt.sh | bash \
     && apt-get -y --allow-unauthenticated install pipelinedb-postgresql-11 \
