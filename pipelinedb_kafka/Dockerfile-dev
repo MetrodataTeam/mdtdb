@@ -1,0 +1,57 @@
+FROM metrodatatech/mdtdb:11
+
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+ENV DEBIAN_FRONTEND noninteractive
+
+# ---------------------------------------------------------------------------
+# Dependency
+# ---------------------------------------------------------------------------
+COPY src/sources.list /etc/apt/sources.list
+RUN apt-get -y update \
+    && apt-get install -y --no-install-recommends tar curl make gcc g++ libssl-dev zlib1g-dev postgresql-server-dev-11
+
+# ---------------------------------------------------------------------------
+# PipelineDB
+# ---------------------------------------------------------------------------
+RUN apt-get -y update \
+    && curl -s http://download.pipelinedb.com/apt.sh | bash \
+    && apt-get -y --allow-unauthenticated install pipelinedb-postgresql-11
+
+# ---------------------------------------------------------------------------
+# librdkafka
+# ---------------------------------------------------------------------------
+COPY src/librdkafka-0.11.6.tar.gz /tmp/
+RUN mkdir -p /tmp/librdkafka \
+    && tar xzf /tmp/librdkafka-0.11.6.tar.gz -C /tmp/librdkafka --strip-components=1 \
+    && cd /tmp/librdkafka \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install \
+    && rm -rf /tmp/librdkafka-0.11.6.tar.gz /tmp/librdkafka
+
+# ---------------------------------------------------------------------------
+# pipeline-kafka
+# ---------------------------------------------------------------------------
+COPY src/pipeline_kafka.tar.gz /tmp/
+RUN mkdir -p /tmp/pipeline_kafka \
+    && tar xzf /tmp/pipeline_kafka.tar.gz -C /tmp/pipeline_kafka --strip-components=1 \
+    && cd /tmp/pipeline_kafka \
+    && ./configure \
+    && make \
+    && make install \
+    && rm -rf /tmp/pipeline_kafka.tar.gz /tmp/pipeline_kafka
+
+# ---------------------------------------------------------------------------
+# Cleanup
+# ---------------------------------------------------------------------------
+RUN apt-get purge -y --auto-remove curl make gcc g++ postgresql-server-dev-11 zlib1g-dev
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+COPY create-pipelinedb.sql /docker-entrypoint-initdb.d/
+COPY configure.sh /docker-entrypoint-initdb.d/
