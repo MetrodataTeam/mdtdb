@@ -1,0 +1,15 @@
+FROM mdillon/postgis:11
+RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8
+
+# https://pgroonga.github.io/install/debian.html
+ADD groonga-archive-keyring.gpg /usr/share/keyrings/groonga-archive-keyring.gpg
+
+RUN apt-get update \
+    && apt-get install -y -V apt-transport-https \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list \
+    && touch /etc/apt/sources.list.d/pgroogna.list \
+    && echo "deb [signed-by=/usr/share/keyrings/groonga-archive-keyring.gpg] https://packages.groonga.org/debian/ stretch main" >> /etc/apt/sources.list.d/pgroogna.list \
+    && echo "deb-src [signed-by=/usr/share/keyrings/groonga-archive-keyring.gpg] https://packages.groonga.org/debian/ stretch main" >> /etc/apt/sources.list.d/pgroogna.list \
+    && apt-get update \
+    && apt-get install -y -V postgresql-11-pgroonga groonga-tokenizer-mecab \
+    && rm -rf /var/lib/apt/lists/*
