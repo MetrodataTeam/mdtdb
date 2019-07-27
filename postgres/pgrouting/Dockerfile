@@ -10,4 +10,4 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /docker-entrypoint-initdb.d
-COPY pgrouting/initdb-pgrouting.sh /docker-entrypoint-initdb.d/routing.sh
+COPY initdb-pgrouting.sh /docker-entrypoint-initdb.d/routing.sh

@@ -2,7 +2,7 @@ FROM mdillon/postgis:11
 RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8
 
 # https://pgroonga.github.io/install/debian.html
-ADD pgroogna/groonga-archive-keyring.gpg /usr/share/keyrings/groonga-archive-keyring.gpg
+ADD groonga-archive-keyring.gpg /usr/share/keyrings/groonga-archive-keyring.gpg
 
 RUN apt-get update \
     && apt-get install -y -V apt-transport-https \
