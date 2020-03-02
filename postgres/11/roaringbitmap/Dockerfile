@@ -1,4 +1,4 @@
-FROM postgres:12.1
+FROM postgres:11
 ARG ROARINGBITMAP_VERSION='0.5.0'
 ADD https://github.com/ChenHuajun/pg_roaringbitmap/archive/v${ROARINGBITMAP_VERSION}.tar.gz /tmp/pg_roaringbitmap.tar.gz
 RUN apt-get update \
