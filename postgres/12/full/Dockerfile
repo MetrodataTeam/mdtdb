@@ -23,7 +23,7 @@ RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && \
     chmod a+x /usr/bin/ossutil64 && \
     ln -s /usr/bin/ossutil64 /usr/bin/ossutil && \
     # roaring bitmap
-    /tmp && \
+    cd /tmp && \
     tar xzvf pg_roaringbitmap.tar.gz && \
     cd "pg_roaringbitmap-${ROARINGBITMAP_VERSION}" && \
     make && \
