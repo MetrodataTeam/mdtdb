@@ -12,15 +12,16 @@ ADD https://packages.groonga.org/debian/groonga-archive-keyring-latest-buster.de
 ADD https://access.2ndquadrant.com/api/repository/dl/default/release/deb /tmp/pglogical.deb
 ADD https://packagecloud.io/timescale/timescaledb/gpgkey /tmp/gpgkey
 ENV OSSUTIL_CONFIG_FILE='/var/lib/postgresql/data/.ossutilconfig'
-RUN echo 'deb http://packagecloud.io/timescale/timescaledb/debian/ buster main' > /etc/apt/sources.list.d/timescaledb.list && \
-    apt-key add /tmp/gpgkey && \
-    localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && \
+RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && \
     apt-get update && \
     apt-get install -y --no-install-recommends build-essential postgresql-server-dev-12 rsync ca-certificates && \
     # pglogical
     cat /tmp/pglogical.deb | bash && \
     apt-get install -y --no-install-recommends postgresql-12-pglogical=${PG_LOGICAL_VERSION} && \
     # timescaledb
+    echo 'deb http://packagecloud.io/timescale/timescaledb/debian/ buster main' > /etc/apt/sources.list.d/timescaledb.list && \
+    apt-key add /tmp/gpgkey && \
+    apt-get update && \
     apt-get install -y --no-install-recommends timescaledb-postgresql-12 && \
     # citus
     chmod +x /tmp/deb.sh && \
