@@ -1,2 +1,2 @@
 # mdtdb
-customize database image for Metrodata Tech
+customized database image for Metrodata Tech
