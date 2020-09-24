@@ -6,9 +6,7 @@ ARG PGROONGA_VERSION='2.2.6-2'
 ARG PGROUNTING_VERSION='3.0.2-1.pgdg90+1'
 ARG TIMESCALEDB_VERSION='1.7.3~debian9'
 ARG REPMGR_VERSION='5.1.0-2.stretch+1'
-ARG CITUS_VERSION='9.4'
 ARG PG_LOGICAL_VERSION='2.3.2-1.stretch+1'
-ADD https://install.citusdata.com/community/deb.sh /tmp/deb.sh
 ADD http://gosspublic.alicdn.com/ossutil/${OSSUTIL_VERSION}/ossutil64 /usr/bin/
 ADD https://github.com/ChenHuajun/pg_roaringbitmap/archive/v${ROARINGBITMAP_VERSION}.tar.gz /tmp/pg_roaringbitmap.tar.gz
 ADD https://packages.groonga.org/debian/groonga-apt-source-latest-stretch.deb /tmp/groonga-archive-keyring-latest-stretch.deb
@@ -29,14 +27,10 @@ RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && \
     apt-key add /tmp/gpgkey && \
     apt-get update && \
     ${INSTALL} timescaledb-postgresql-11=${TIMESCALEDB_VERSION} && \
-    # citus
-    chmod +x /tmp/deb.sh && \
-    /tmp/deb.sh && \
-    ${INSTALL} postgresql-11-citus-${CITUS_VERSION} && \
     # pgroonga
     apt-get install -y -V /tmp/groonga-archive-keyring-latest-stretch.deb && \
     apt-get update && \
-    ${INSTALL} postgresql-11-pgroonga=${PGROONGA_VERSION} && \
+    ${INSTALL} postgresql-11-pgroonga=${PGROONGA_VERSION} groonga-tokenizer-mecab && \
     # repmgr
     ${INSTALL} postgresql-11-repmgr=${REPMGR_VERSION} && \
     # ossutil
