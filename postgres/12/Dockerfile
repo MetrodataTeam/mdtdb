@@ -4,8 +4,9 @@ ARG ROARINGBITMAP_VERSION='0.5.2'
 # https://pgroonga.github.io/
 ARG PGROONGA_VERSION='2.2.6-2'
 ARG TIMESCALEDB_VERSION='1.7.3~debian10'
-ARG PG_LOGICAL_VERSION='2.3.2-1.pgdg100+1'
+ARG PG_LOGICAL_VERSION='2.3.3-1.pgdg100+1'
 ARG REPMGR_VERSION='5.1.0-2.buster+1'
+ARG MECAB_VERSION='10.0.8-1'
 ADD http://gosspublic.alicdn.com/ossutil/${OSSUTIL_VERSION}/ossutil64 /usr/bin/
 ADD https://github.com/ChenHuajun/pg_roaringbitmap/archive/v${ROARINGBITMAP_VERSION}.tar.gz /tmp/pg_roaringbitmap.tar.gz
 ADD https://packages.groonga.org/debian/groonga-archive-keyring-latest-buster.deb /tmp/groonga-archive-keyring-latest-buster.deb
@@ -27,7 +28,7 @@ RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && \
     # pgroonga
     apt-get install -y -V /tmp/groonga-archive-keyring-latest-buster.deb && \
     apt-get update && \
-    ${INSTALL} postgresql-12-pgdg-pgroonga=${PGROONGA_VERSION} groonga-tokenizer-mecab && \
+    ${INSTALL} postgresql-12-pgdg-pgroonga=${PGROONGA_VERSION} groonga-tokenizer-mecab=${MECAB_VERSION} && \
     # repmgr
     ${INSTALL} postgresql-12-repmgr=${REPMGR_VERSION} && \
     # ossutil

@@ -7,6 +7,7 @@ ARG PGROUNTING_VERSION='3.0.2-1.pgdg90+1'
 ARG TIMESCALEDB_VERSION='1.7.3~debian9'
 ARG REPMGR_VERSION='5.1.0-2.stretch+1'
 ARG PG_LOGICAL_VERSION='2.3.2-1.stretch+1'
+ARG MECAB_VERSION='10.0.8-1'
 ADD http://gosspublic.alicdn.com/ossutil/${OSSUTIL_VERSION}/ossutil64 /usr/bin/
 ADD https://github.com/ChenHuajun/pg_roaringbitmap/archive/v${ROARINGBITMAP_VERSION}.tar.gz /tmp/pg_roaringbitmap.tar.gz
 ADD https://packages.groonga.org/debian/groonga-apt-source-latest-stretch.deb /tmp/groonga-archive-keyring-latest-stretch.deb
@@ -30,7 +31,7 @@ RUN localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && \
     # pgroonga
     apt-get install -y -V /tmp/groonga-archive-keyring-latest-stretch.deb && \
     apt-get update && \
-    ${INSTALL} postgresql-11-pgroonga=${PGROONGA_VERSION} groonga-tokenizer-mecab && \
+    ${INSTALL} postgresql-11-pgroonga=${PGROONGA_VERSION} groonga-tokenizer-mecab=${MECAB_VERSION} && \
     # repmgr
     ${INSTALL} postgresql-11-repmgr=${REPMGR_VERSION} && \
     # ossutil
