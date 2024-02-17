@@ -1,0 +1,17 @@
+version: '2.4'
+
+services:
+    master:
+        image: metrodatatech/mdtdb:12-full
+        ports:
+            - 5432:5432
+    slave:
+        image: metrodatatech/mdtdb:12-full
+        ports:
+            - 5433:5432
+
+    pool:
+        image: registry.cn-hangzhou.aliyuncs.com/mdt-external/mdtdb:12-pgpool
+        shm_size: '1gb'
+        ports:
+            - 5434:5432
