@@ -26,7 +26,7 @@ on:
       NEXUS:
         required: true
 env:
-  REGISTRY_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/mdtdb
+  REGISTRY_IMAGE: metrodatatech/mdtdb
 
 jobs:
   build:
