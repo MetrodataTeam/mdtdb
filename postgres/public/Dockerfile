@@ -16,6 +16,8 @@ COPY ./update-postgis.sh /usr/local/bin
 COPY ./multiple_db.sh /docker-entrypoint-initdb.d/11_multiple_db.sh
 COPY ./set_version.sh /docker-entrypoint-initdb.d/80_set_version.sh
 
+COPY ./custom_entrypoint.sh /usr/local/bin/custom_entrypoint.sh
+
 ENV OSSUTIL_CONFIG_FILE='/var/lib/postgresql/data/.ossutilconfig'
 ENV INSTALL='apt-get install -y --no-install-recommends --no-upgrade'
 ARG NEXUS
@@ -37,7 +39,7 @@ ARG ROARINGBITMAP_VERSION='0.5.4'
 ARG REPMGR_VERSION='5.4.1*'
 
 # https://github.com/eulerto/wal2json/releases
-ARG WAL2JSON_VERSION='2.5*'
+ARG WAL2JSON_VERSION='2.6*'
 
 # TODO(Deo): re-enable this once it's more easy to build
 # https://github.com/pgspider/parquet_s3_fdw/releases
@@ -49,9 +51,6 @@ ARG MYSQL_FDW_VERSION='2.9.1*'
 # https://github.com/pramsey/pgsql-http/releases
 ARG PGSQL_HTTP_VERSION='1.6.0'
 
-# https://github.com/timescale/promscale_extension/releases
-# ARG PROMSCALE_VERSION='0.7.0'
-
 # https://github.com/citusdata/citus#install-citus-locally
 # https://github.com/citusdata/citus/blob/main/CHANGELOG.md
 # TODO(Deo): disable citus as we may not be using it shortly, for experimentation, use older versions
@@ -59,7 +58,7 @@ ARG PGSQL_HTTP_VERSION='1.6.0'
 # ADD https://repos.citusdata.com/community/gpgkey /tmp/citus.gpg
 
 # https://github.com/pgvector/pgvector/blob/master/CHANGELOG.md
-ARG PGVECTOR_VERSION='0.6.0'
+ARG PGVECTOR_VERSION='0.7.0'
 
 # https://github.com/bytesandbrains/h3-pg/releases
 ARG H3PG_VERSION='4.1.3*'
@@ -87,23 +86,26 @@ ARG PG_CRON_VERSION='1.6.2*'
 
 # https://github.com/pgRouting/pgrouting/releases
 # NOTICE: repo keeps deleting old artifacts, we may change this
-ARG PGROUTING_VERSION='3.6.1*'
+ARG PGROUTING_VERSION='3.6.2*'
 
 # https://gitlab.com/dalibo/postgresql_anonymizer/-/tags
-ARG ANONYMIZER_VERSION='1.2.0'
+ARG ANONYMIZER_VERSION='1.3.2'
 
 # https://github.com/citusdata/postgresql-hll/releases
 ARG POSTGRESQL_HLL_VERSION='2.18'
 
 # https://github.com/paradedb/paradedb/releases
-# pg_sparse/pg_bm25/pg_analytics share the version number
-ARG PARADEDB_VERSION='0.5.6'
+# pg_search/pg_lakehouse share the version number
+ARG PARADEDB_VERSION='0.7.2'
+
+# pg_analytics is kind of deprecated
+ARG PG_ANALYTICS_VERSION='0.6.1'
 
 # https://github.com/tensorchord/pgvecto.rs/releases
 ARG PG_VECTORS_VERSION='0.2.0'
 
 # https://github.com/supabase/pg_jsonschema/releases
-ARG PG_JSONSCHEMA_VERSION='0.2.0'
+ARG PG_JSONSCHEMA_VERSION='0.3.1'
 
 RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERSION_CODENAME=//'` && \
     export WGET='wget -nv --directory-prefix=/tmp/ '${NEXUS}'/repository/raw-dev' && \
@@ -111,7 +113,7 @@ RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERS
     echo "deb "${NEXUS}"/repository/apt-postgresql/ "${VERSION_CODENAME}"-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7FCC7D46ACCC4CF8 && \
     echo "deb "${NEXUS}"/repository/arrow/ "${VERSION_CODENAME}" main" > /etc/apt/sources.list.d/arrow.list && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 91D18FCF079F8007 && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9CBA4EF977CA20B8 && \
     # echo "deb "${NEXUS}"/repository/apt-timescaledb/ "${VERSION_CODENAME}" main" > /etc/apt/sources.list.d/timescaledb.list && \
     # cat /tmp/timescaledb_gpgkey | apt-key add - && \
     apt-get update && \
@@ -142,17 +144,23 @@ RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERS
         cd /tmp/ && \
         apt install /tmp/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${archi}.deb ; \
     fi && \
-    # paradedb only supports pg15/16 at the moment
-    if [ ${PG_MAJOR} -ge 15 ]; then \
+    # paradedb only supports pg14/15/16 at the moment
+    if [ ${PG_MAJOR} -ge 14 ]; then \
         # install libicu manually to ubuntu latest version, since paradedb pre-build on ubuntu
         ${WGET}/backend/libicu/libicu70_70.1-2_${archi}.deb && \
         apt install /tmp/libicu70_70.1-2_${archi}.deb && \
-        for ext in 'pg_bm25' 'pg_sparse' 'pg_analytics'; \
+        for ext in 'pg_search' 'pg_lakehouse'; \
         do \
             echo "installing "${archi}" "${ext} && \
             ${WGET}/backend/paradedb/${ext}-v${PARADEDB_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb && \
             apt install /tmp/${ext}-v${PARADEDB_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb ; \
         done ; \
+    fi && \
+    # pg_analytics only supports pg15/16 at the moment
+    if [ ${PG_MAJOR} -ge 15 ]; then \
+        echo "installing "${archi}" pg_analytics" && \
+        ${WGET}/backend/paradedb/pg_analytics-v${PG_ANALYTICS_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb && \
+        apt install /tmp/pg_analytics-v${PG_ANALYTICS_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb ; \
     fi && \
     # postgresql-hll
     ${WGET}/backend/postgresql-hll/postgresql-hll-${POSTGRESQL_HLL_VERSION}.tar.gz && \
@@ -239,3 +247,5 @@ RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERS
     rm -rf /tmp/* && \
     apt-get autoremove -y --purge libcurl4-openssl-dev postgresql-server-dev-${PG_MAJOR} build-essential wget libkrb5-dev cmake && \
     rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["custom_entrypoint.sh"]
