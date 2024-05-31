@@ -96,7 +96,7 @@ ARG POSTGRESQL_HLL_VERSION='2.18'
 
 # https://github.com/paradedb/paradedb/releases
 # pg_search/pg_lakehouse share the version number
-ARG PARADEDB_VERSION='0.7.2'
+ARG PARADEDB_VERSION='0.7.3'
 
 # pg_analytics is kind of deprecated
 ARG PG_ANALYTICS_VERSION='0.6.1'
@@ -139,12 +139,12 @@ RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERS
         apt install /tmp/pg_jsonschema-v${PG_JSONSCHEMA_VERSION}-pg${PG_MAJOR}-${archi}-linux-gnu.deb ; \
     fi && \
     # pg vecto.rs, supports 14+
-    if [ "${PG_MAJOR}" != "13" ]; then \
+    if [ ${PG_MAJOR} -ge 14 ]; then \
         ${WGET}/backend/vectors/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${archi}.deb && \
         cd /tmp/ && \
         apt install /tmp/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${archi}.deb ; \
     fi && \
-    # paradedb only supports pg14/15/16 at the moment
+    # paradedb only supports 14+
     if [ ${PG_MAJOR} -ge 14 ]; then \
         # install libicu manually to ubuntu latest version, since paradedb pre-build on ubuntu
         ${WGET}/backend/libicu/libicu70_70.1-2_${archi}.deb && \
@@ -152,11 +152,11 @@ RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERS
         for ext in 'pg_search' 'pg_lakehouse'; \
         do \
             echo "installing "${archi}" "${ext} && \
-            ${WGET}/backend/paradedb/${ext}-v${PARADEDB_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb && \
-            apt install /tmp/${ext}-v${PARADEDB_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb ; \
+            ${WGET}/backend/paradedb/${ext}-v${PARADEDB_VERSION}-debian-12-${archi}-pg${PG_MAJOR}.deb && \
+            apt install /tmp/${ext}-v${PARADEDB_VERSION}-debian-12-${archi}-pg${PG_MAJOR}.deb ; \
         done ; \
     fi && \
-    # pg_analytics only supports pg15/16 at the moment
+    # pg_analytics only supports 15+
     if [ ${PG_MAJOR} -ge 15 ]; then \
         echo "installing "${archi}" pg_analytics" && \
         ${WGET}/backend/paradedb/pg_analytics-v${PG_ANALYTICS_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb && \
