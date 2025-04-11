@@ -89,7 +89,7 @@ jobs:
             IS_ARM=${{ env.IS_ARM }}
             PG_HINT_PLAN_VERSION=${{ inputs.PG_HINT_PLAN_VERSION }}
             PGAUDIT_VERSION=${{ inputs.PGAUDIT_VERSION }}
-            NEXUS=${{ secrets.NEXUS }}
+            MIRROR=${{ secrets.NEXUS }}
       -
         name: Export digest
         run: |
