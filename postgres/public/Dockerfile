@@ -1,11 +1,13 @@
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+
+FROM ${BASE_IMAGE} as mdtdb
+
 ARG DEBIAN_FRONTEND=noninteractive
-ARG IS_ARM=false
+ARG ARCH=amd64
 
 # https://github.com/postgis/docker-postgis
 ENV POSTGIS_MAJOR 3
-ENV POSTGIS_VERSION '3.4.2*'
+ENV POSTGIS_VERSION '3.5.2*'
 
 ARG MDTDB_VERSION
 ENV MDTDB_VERSION=${MDTDB_VERSION}
@@ -20,48 +22,31 @@ COPY ./custom_entrypoint.sh /usr/local/bin/custom_entrypoint.sh
 
 ENV OSSUTIL_CONFIG_FILE='/var/lib/postgresql/data/.ossutilconfig'
 ENV INSTALL='apt-get install -y --no-install-recommends --no-upgrade'
-ARG NEXUS
-
-# https://github.com/timescale/timescaledb/releases
-# ADD https://packagecloud.io/timescale/timescaledb/gpgkey /tmp/timescaledb_gpgkey
-# ARG TIMESCALEDB_VERSION='2.9.2*'
+ARG MIRROR
 
 # https://github.com/aliyun/ossutil/releases
-# wget https://gosspublic.alicdn.com/ossutil/${OSSUTIL_VERSION}/ossutil64
-ARG OSSUTIL_VERSION='1.7.14'
-ADD ${NEXUS}/repository/raw-dev/backend/ossutil/${OSSUTIL_VERSION}/ossutil64 /usr/bin/
+# https://help.aliyun.com/zh/oss/developer-reference/install-ossutil
+ARG OSSUTIL_VERSION='1.7.19'
+ADD https://${MIRROR}/raw-dev/backend/ossutil/${OSSUTIL_VERSION}/ossutil64.${ARCH} /usr/bin/
 
 # https://github.com/ChenHuajun/pg_roaringbitmap/releases
 ARG ROARINGBITMAP_VERSION='0.5.4'
 
 # https://github.com/EnterpriseDB/repmgr/releases
 # https://apt.postgresql.org/pub/repos/apt/pool/main/r/repmgr/
-ARG REPMGR_VERSION='5.4.1*'
+# ARG REPMGR_VERSION='5.4.1*'
 
 # https://github.com/eulerto/wal2json/releases
 ARG WAL2JSON_VERSION='2.6*'
 
-# TODO(Deo): re-enable this once it's more easy to build
-# https://github.com/pgspider/parquet_s3_fdw/releases
-# ARG PARQUET_FDW_VERSION='1.1.0'
-
-# https://github.com/EnterpriseDB/mysql_fdw/releases
-ARG MYSQL_FDW_VERSION='2.9.1*'
-
 # https://github.com/pramsey/pgsql-http/releases
-ARG PGSQL_HTTP_VERSION='1.6.0'
-
-# https://github.com/citusdata/citus#install-citus-locally
-# https://github.com/citusdata/citus/blob/main/CHANGELOG.md
-# TODO(Deo): disable citus as we may not be using it shortly, for experimentation, use older versions
-# ARG CITUS_VERSION='11.1'
-# ADD https://repos.citusdata.com/community/gpgkey /tmp/citus.gpg
+ARG PGSQL_HTTP_VERSION='1.6.1'
 
 # https://github.com/pgvector/pgvector/blob/master/CHANGELOG.md
-ARG PGVECTOR_VERSION='0.7.0'
+ARG PGVECTOR_VERSION='0.8.0'
 
 # https://github.com/bytesandbrains/h3-pg/releases
-ARG H3PG_VERSION='4.1.3*'
+ARG H3PG_VERSION='4.2.2*'
 
 # https://github.com/ossc-db/pg_hint_plan/tags
 # update ci build args as it differes each pg major
@@ -69,11 +54,12 @@ ARG PG_HINT_PLAN_VERSION=''
 
 # https://github.com/2ndQuadrant/pglogical/releases
 # https://apt.postgresql.org/pub/repos/apt/pool/main/p/pglogical/
-ARG PGLOGICAL_VERSION='2.4.4*'
+ARG PGLOGICAL_VERSION='2.4.5*'
 # https://github.com/enova/pgl_ddl_deploy/releases
 ARG PGL_DDL_DEPLOY_VERSION='2.2.1*'
 
-# TODO(Deo): add pgmq or pg_later
+# https://github.com/tembo-io/pgmq/releases
+ARG PGMQ_VERSION='1.4.5'
 
 # https://github.com/apache/age/releases
 ARG AGE_VERSION='1.5.0'
@@ -82,11 +68,11 @@ ARG AGE_VERSION='1.5.0'
 ARG PGAUDIT_VERSION=''
 
 # https://github.com/citusdata/pg_cron/releases
-ARG PG_CRON_VERSION='1.6.2*'
+ARG PG_CRON_VERSION='1.6.5*'
 
 # https://github.com/pgRouting/pgrouting/releases
 # NOTICE: repo keeps deleting old artifacts, we may change this
-ARG PGROUTING_VERSION='3.6.2*'
+ARG PGROUTING_VERSION='3.7.3*'
 
 # https://gitlab.com/dalibo/postgresql_anonymizer/-/tags
 ARG ANONYMIZER_VERSION='1.3.2'
@@ -95,82 +81,89 @@ ARG ANONYMIZER_VERSION='1.3.2'
 ARG POSTGRESQL_HLL_VERSION='2.18'
 
 # https://github.com/paradedb/paradedb/releases
-# pg_search/pg_lakehouse share the version number
-ARG PARADEDB_VERSION='0.7.3'
-
-# pg_analytics is kind of deprecated
-ARG PG_ANALYTICS_VERSION='0.6.1'
+ARG PARADEDB_VERSION='0.15.4'
+# https://github.com/paradedb/pg_analytics/releases
+ARG PG_ANALYTICS_VERSION='0.3.5'
 
 # https://github.com/tensorchord/pgvecto.rs/releases
-ARG PG_VECTORS_VERSION='0.2.0'
+ARG PG_VECTORS_VERSION='0.4.0'
 
 # https://github.com/supabase/pg_jsonschema/releases
-ARG PG_JSONSCHEMA_VERSION='0.3.1'
+ARG PG_JSONSCHEMA_VERSION='0.3.3'
 
+# https://github.com/MobilityDB/MobilityDB/releases
+ARG MOBILITYDB_VERSION='1.1.2'
+
+# https://ext.pigsty.io/#/pg_duckdb
+ARG PG_DUCKDB='0.3.1*'
+
+ADD https://repo.pigsty.io/key /tmp/pigsty.key
+
+# ADD https://"${MIRROR}"/apt-pgxman/pgxman-keyring.gpg /usr/share/keyrings/pgxman-cli.gpg
 RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERSION_CODENAME=//'` && \
-    export WGET='wget -nv --directory-prefix=/tmp/ '${NEXUS}'/repository/raw-dev' && \
-    echo "deb "${NEXUS}"/repository/apt-debian/ "${VERSION_CODENAME}" main contrib" > /etc/apt/sources.list && \
-    echo "deb "${NEXUS}"/repository/apt-postgresql/ "${VERSION_CODENAME}"-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    export WGET='wget -nv --directory-prefix=/tmp/ ' && \
+    echo "deb "http://${MIRROR}"/apt-debian/ "${VERSION_CODENAME}" main contrib" > /etc/apt/sources.list && \
+    rm -f /etc/apt/sources.list.d/debian.sources && \
+    echo "deb "http://${MIRROR}"/apt-postgresql/ "${VERSION_CODENAME}"-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7FCC7D46ACCC4CF8 && \
-    echo "deb "${NEXUS}"/repository/arrow/ "${VERSION_CODENAME}" main" > /etc/apt/sources.list.d/arrow.list && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9CBA4EF977CA20B8 && \
-    # echo "deb "${NEXUS}"/repository/apt-timescaledb/ "${VERSION_CODENAME}" main" > /etc/apt/sources.list.d/timescaledb.list && \
-    # cat /tmp/timescaledb_gpgkey | apt-key add - && \
+    echo "deb "http://${MIRROR}"/arrow/ "${VERSION_CODENAME}" main" > /etc/apt/sources.list.d/arrow.list && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 91D18FCF079F8007 && \
+    cat /tmp/pigsty.key | gpg --dearmor -o /etc/apt/keyrings/pigsty.gpg && \
+    echo "deb  [signed-by=/etc/apt/keyrings/pigsty.gpg] "http://${MIRROR}"/apt-pigsty/infra generic main" > /etc/apt/sources.list.d/pigsty.list && \
+    echo "deb  [signed-by=/etc/apt/keyrings/pigsty.gpg] "http://${MIRROR}"/apt-pigsty/pgsql/bookworm bookworm main" >> /etc/apt/sources.list.d/pigsty.list && \
+    # echo "deb [arch="${ARCH}" signed-by=/usr/share/keyrings/pgxman-cli.gpg] http://"${MIRROR}"/apt-pgxman/cli stable main" > /etc/apt/sources.list.d/pgxman.list && \
     apt-get update && \
     # NOTICE: handle version imcompaticility here
-    # ${INSTALL} --allow-downgrades libc6=2.31-13+deb11u6 && \
+    # apt remove -y libssl3 && ${INSTALL} --allow-downgrades --reinstall libssl3=3.0.14-1~deb12u1 && \
     ${INSTALL} postgresql-server-dev-${PG_MAJOR} build-essential ca-certificates wget cmake \
+    # crontab
+    cron \
     # age
     bison flex \
     # pgaudit
     libkrb5-dev \
+    # https://github.com/MobilityDB/MobilityDB/blob/master/docker/Dockerfile#L22
+    #  mobilitydb
+    libproj-dev \
+    libjson-c-dev \
+    libgsl-dev \
+    libgeos-dev \
     # pgsql-http
     libcurl4 libcurl4-openssl-dev && \
+    # pg_duckdb
+    ${INSTALL} postgresql-${PG_MAJOR}-pg-duckdb=${PG_DUCKDB} && \
     # h3pg
     ${INSTALL} postgresql-${PG_MAJOR}-h3=${H3PG_VERSION} && \
-    export archi=arm64 && \
-    if [ "${IS_ARM}" = "false" ]; then \
-        export archi=amd64 ; \
-    fi && \
-    # pg_jsonschema, supports 14+
-    if [ "${PG_MAJOR}" != "13" ]; then \
-        ${WGET}/backend/pg_jsonschema/pg_jsonschema-v${PG_JSONSCHEMA_VERSION}-pg${PG_MAJOR}-${archi}-linux-gnu.deb && \
-        cd /tmp/ && \
-        apt install /tmp/pg_jsonschema-v${PG_JSONSCHEMA_VERSION}-pg${PG_MAJOR}-${archi}-linux-gnu.deb ; \
-    fi && \
-    # pg vecto.rs, supports 14+
-    if [ ${PG_MAJOR} -ge 14 ]; then \
-        ${WGET}/backend/vectors/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${archi}.deb && \
-        cd /tmp/ && \
-        apt install /tmp/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${archi}.deb ; \
-    fi && \
-    # paradedb only supports 14+
-    if [ ${PG_MAJOR} -ge 14 ]; then \
-        # install libicu manually to ubuntu latest version, since paradedb pre-build on ubuntu
-        ${WGET}/backend/libicu/libicu70_70.1-2_${archi}.deb && \
-        apt install /tmp/libicu70_70.1-2_${archi}.deb && \
-        for ext in 'pg_search' 'pg_lakehouse'; \
-        do \
-            echo "installing "${archi}" "${ext} && \
-            ${WGET}/backend/paradedb/${ext}-v${PARADEDB_VERSION}-debian-12-${archi}-pg${PG_MAJOR}.deb && \
-            apt install /tmp/${ext}-v${PARADEDB_VERSION}-debian-12-${archi}-pg${PG_MAJOR}.deb ; \
-        done ; \
-    fi && \
-    # pg_analytics only supports 15+
-    if [ ${PG_MAJOR} -ge 15 ]; then \
-        echo "installing "${archi}" pg_analytics" && \
-        ${WGET}/backend/paradedb/pg_analytics-v${PG_ANALYTICS_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb && \
-        apt install /tmp/pg_analytics-v${PG_ANALYTICS_VERSION}-pg${PG_MAJOR}-${archi}-ubuntu2204.deb ; \
-    fi && \
-    # postgresql-hll
-    ${WGET}/backend/postgresql-hll/postgresql-hll-${POSTGRESQL_HLL_VERSION}.tar.gz && \
+    # pg_jsonschema
+    ${WGET}https://${MIRROR}/github/supabase/pg_jsonschema/releases/download/v${PG_JSONSCHEMA_VERSION}/pg_jsonschema-v${PG_JSONSCHEMA_VERSION}-pg${PG_MAJOR}-${ARCH}-linux-gnu.deb && \
     cd /tmp/ && \
-    tar xzvf postgresql-hll-${POSTGRESQL_HLL_VERSION}.tar.gz && \
+    apt install /tmp/pg_jsonschema-v${PG_JSONSCHEMA_VERSION}-pg${PG_MAJOR}-${ARCH}-linux-gnu.deb && \
+    # pg vecto.rs
+    ${WGET}https://${MIRROR}/github/tensorchord/pgvecto.rs/releases/download/v${PG_VECTORS_VERSION}/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${ARCH}.deb && \
+    cd /tmp/ && \
+    apt install /tmp/vectors-pg${PG_MAJOR}_${PG_VECTORS_VERSION}_${ARCH}.deb && \
+    # paradedb pg_search
+    ${WGET}https://${MIRROR}/github/paradedb/paradedb/releases/download/v${PARADEDB_VERSION}/postgresql-${PG_MAJOR}-pg-search_${PARADEDB_VERSION}-1PARADEDB-bookworm_${ARCH}.deb && \
+    apt install /tmp/postgresql-${PG_MAJOR}-pg-search_${PARADEDB_VERSION}-1PARADEDB-bookworm_${ARCH}.deb && \
+    # paradedb pg_analytics
+    ${WGET}https://${MIRROR}/github/paradedb/pg_analytics/releases/download/v${PG_ANALYTICS_VERSION}/postgresql-${PG_MAJOR}-pg-analytics_${PG_ANALYTICS_VERSION}-1PARADEDB-bookworm_${ARCH}.deb && \
+    apt install /tmp/postgresql-${PG_MAJOR}-pg-analytics_${PG_ANALYTICS_VERSION}-1PARADEDB-bookworm_${ARCH}.deb && \
+    # pgmq
+    ${WGET}https://${MIRROR}/github/tembo-io/pgmq/archive/refs/tags/v${PGMQ_VERSION}.tar.gz && \
+    cd /tmp/ && \
+    tar xzvf v${PGMQ_VERSION}.tar.gz && \
+    cd pgmq-${PGMQ_VERSION}/pgmq-extension && \
+    make && \
+    make install && \
+    # postgresql-hll
+    ${WGET}https://${MIRROR}/github/citusdata/postgresql-hll/archive/refs/tags/v${POSTGRESQL_HLL_VERSION}.tar.gz && \
+    cd /tmp/ && \
+    tar xzvf v${POSTGRESQL_HLL_VERSION}.tar.gz && \
     cd postgresql-hll-${POSTGRESQL_HLL_VERSION} && \
     make && \
     make install && \
     # postgresql_anonymizer
-    ${WGET}/backend/postgresql_anonymizer/postgresql_anonymizer-${ANONYMIZER_VERSION}.tar.gz && \
+    ${WGET}https://${MIRROR}/gitlab/dalibo/postgresql_anonymizer/-/archive/${ANONYMIZER_VERSION}/postgresql_anonymizer-${ANONYMIZER_VERSION}.tar.gz && \
     cd /tmp/ && \
     tar xzvf postgresql_anonymizer-${ANONYMIZER_VERSION}.tar.gz && \
     cd postgresql_anonymizer-${ANONYMIZER_VERSION} && \
@@ -181,64 +174,79 @@ RUN export VERSION_CODENAME=`grep VERSION_CODENAME /etc/os-release | sed 's/VERS
     # pg_cron
     ${INSTALL} postgresql-${PG_MAJOR}-cron=${PG_CRON_VERSION} && \
     # pgaudit
-    ${WGET}/backend/pgaudit/pgaudit-${PGAUDIT_VERSION}.tar.gz && \
+    ${WGET}https://${MIRROR}/github/pgaudit/pgaudit/archive/refs/tags/${PGAUDIT_VERSION}.tar.gz && \
     cd /tmp/ && \
-    tar xzvf pgaudit-${PGAUDIT_VERSION}.tar.gz && \
+    tar xzvf ${PGAUDIT_VERSION}.tar.gz && \
     cd pgaudit-${PGAUDIT_VERSION} && \
     make USE_PGXS=1 && \
     make install USE_PGXS=1 && \
     # age
-    ${WGET}/backend/age/apache-age-pg${PG_MAJOR}-${AGE_VERSION}-src.tar.gz && \
-    cd /tmp/ && \
-    tar xzvf apache-age-pg${PG_MAJOR}-${AGE_VERSION}-src.tar.gz && \
-    cd apache-age-${AGE_VERSION} && \
-    make install && \
+    if [ ${PG_MAJOR} -ge 17 ]; then \
+      ${WGET}https://${MIRROR}/github/MetrodataTeam/age/archive/refs/tags/v1.5.0.1.tar.gz && \
+      cd /tmp/ && \
+      tar xzvf v1.5.0.1.tar.gz && \
+      cd age-1.5.0.1 && \
+      make install ; \
+    fi && \
+    if [ ${PG_MAJOR} -lt 17 ]; then \
+      ${WGET}https://${MIRROR}/github/apache/age/releases/download/PG${PG_MAJOR}/v${AGE_VERSION}-rc0/apache-age-${AGE_VERSION}-src.tar.gz && \
+      cd /tmp/ && \
+      tar xzvf apache-age-${AGE_VERSION}-src.tar.gz && \
+      cd apache-age-${AGE_VERSION} && \
+      make install ; \
+    fi && \
     # postgis
     ${INSTALL} \
         postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR=$POSTGIS_VERSION \
         postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts && \
+    # modilitydb, must install after postgis
+    ${WGET}https://${MIRROR}/github/MobilityDB/MobilityDB/archive/v${MOBILITYDB_VERSION}.tar.gz && \
+    cd /tmp/ && \
+    tar xzvf v${MOBILITYDB_VERSION}.tar.gz && \
+    cd MobilityDB-${MOBILITYDB_VERSION} && \
+    mkdir build && \
+    cd build && \
+    cmake ..  && \
+    make -j4 && \
+    make install && \
     # pglogical
     ${INSTALL} postgresql-${PG_MAJOR}-pglogical=${PGLOGICAL_VERSION} && \
     # pgl-ddl-deploy
     ${INSTALL} postgresql-${PG_MAJOR}-pgl-ddl-deploy=${PGL_DDL_DEPLOY_VERSION} && \
     # pg_hint_plan
-    ${WGET}/backend/pg_hint_plan/pg_hint_plan-${PG_HINT_PLAN_VERSION}.tar.gz && \
+    ${WGET}https://${MIRROR}/github/ossc-db/pg_hint_plan/archive/refs/tags/${PG_HINT_PLAN_VERSION}.tar.gz && \
     cd /tmp/ && \
-    tar xzvf pg_hint_plan-${PG_HINT_PLAN_VERSION}.tar.gz && \
+    tar xzvf ${PG_HINT_PLAN_VERSION}.tar.gz && \
     cd pg_hint_plan-${PG_HINT_PLAN_VERSION} && \
     make && \
     make install && \
     # pgvector
-    ${WGET}/backend/pgvector/pgvector-${PGVECTOR_VERSION}.tar.gz && \
+    ${WGET}https://${MIRROR}/github/pgvector/pgvector/archive/refs/tags/v${PGVECTOR_VERSION}.tar.gz && \
     cd /tmp/ && \
-    tar xzvf pgvector-${PGVECTOR_VERSION}.tar.gz && \
+    tar xzvf v${PGVECTOR_VERSION}.tar.gz && \
     cd pgvector-${PGVECTOR_VERSION} && \
     # https://github.com/pgvector/pgvector/issues/143
     make OPTFLAGS="" && \
     make install && \
-    # timescaledb
-    # ${INSTALL} timescaledb-2-postgresql-${PG_MAJOR}=${TIMESCALEDB_VERSION} timescaledb-2-loader-postgresql-${PG_MAJOR}=${TIMESCALEDB_VERSION} && \
     # repmgr
-    ${INSTALL} postgresql-${PG_MAJOR}-repmgr=${REPMGR_VERSION} && \
+    # ${INSTALL} postgresql-${PG_MAJOR}-repmgr=${REPMGR_VERSION} && \
     # wal2json
     ${INSTALL} postgresql-${PG_MAJOR}-wal2json=${WAL2JSON_VERSION} && \
     # ossutil
-    chmod a+x /usr/bin/ossutil64 && \
-    ln -s /usr/bin/ossutil64 /usr/bin/ossutil && \
+    chmod a+x /usr/bin/ossutil64.${ARCH} && \
+    ln -s /usr/bin/ossutil64.${ARCH} /usr/bin/ossutil && \
     # roaring bitmap
-    ${WGET}/backend/pg_roaringbitmap/pg_roaringbitmap-${ROARINGBITMAP_VERSION}.tar.gz && \
+    ${WGET}https://${MIRROR}/github/ChenHuajun/pg_roaringbitmap/archive/refs/tags/v${ROARINGBITMAP_VERSION}.tar.gz && \
     cd /tmp && \
-    tar xzvf pg_roaringbitmap-${ROARINGBITMAP_VERSION}.tar.gz && \
+    tar xzvf v${ROARINGBITMAP_VERSION}.tar.gz && \
     cd pg_roaringbitmap-${ROARINGBITMAP_VERSION} && \
     make && \
     make install && \
-    # mysql fdw
-    ${INSTALL} postgresql-${PG_MAJOR}-mysql-fdw=${MYSQL_FDW_VERSION} && \
     # pgsql-http
-    ${WGET}/backend/pgsql-http/pgsql-http-${PGSQL_HTTP_VERSION}.tar.gz && \
+    ${WGET}https://${MIRROR}/github/pramsey/pgsql-http/archive/refs/tags/v${PGSQL_HTTP_VERSION}.tar.gz && \
     cd /tmp/ && \
-    tar xzvf pgsql-http-${PGSQL_HTTP_VERSION}.tar.gz && \
-    cd "pgsql-http-${PGSQL_HTTP_VERSION}" && \
+    tar xzvf v${PGSQL_HTTP_VERSION}.tar.gz && \
+    cd pgsql-http-${PGSQL_HTTP_VERSION} && \
     make && \
     make install && \
     # increase max open files soft limit for postgres
